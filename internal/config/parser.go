@@ -37,7 +37,11 @@ func (cp *configParser) ParseFile(filename string) (*configOptions, error) {
 	}
 	defer fp.Close()
 
-	if err := cp.parseLines(parseFileContent(fp)); err != nil {
+	lines, err := parseFileContent(fp)
+	if err != nil {
+		return nil, err
+	}
+	if err := cp.parseLines(lines); err != nil {
 		return nil, err
 	}
 
@@ -245,7 +249,8 @@ func readSecretFileValue(filename string) (string, error) {
 	return value, nil
 }
 
-func parseFileContent(r io.Reader) (lines []string) {
+func parseFileContent(r io.Reader) ([]string, error) {
+	var lines []string
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -253,5 +258,8 @@ func parseFileContent(r io.Reader) (lines []string) {
 			lines = append(lines, line)
 		}
 	}
-	return lines
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return lines, nil
 }
