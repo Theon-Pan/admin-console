@@ -80,8 +80,7 @@ func Parse() {
 	if flagMigrate {
 		println("Begin to do db migration")
 		if err := database.Migrate(db); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+			printErrorAndExit(err)
 		}
 		println("Migration is done!")
 	}
