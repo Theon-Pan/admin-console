@@ -51,14 +51,6 @@ func NewConfigOptions() *configOptions {
 		rootURL: "http://localhost",
 		baseURL: "",
 		options: map[string]*configValue{
-			"NODE_ID": {
-				parsedIntValue: 1,
-				rawValue:       "1",
-				valueType:      intType,
-				validator: func(rawValue string) error {
-					return validateGreaterOrEqualThan(rawValue, 1)
-				},
-			},
 			"DATABASE_CONNECTION_LIFETIME": {
 				parsedDuration: time.Minute * 5,
 				rawValue:       "5",
@@ -126,6 +118,14 @@ func NewConfigOptions() *configOptions {
 					return validateChoices(rawValue, []string{"debug", "info", "warning", "error"})
 				},
 			},
+			"NODE_ID": {
+				parsedInt64Value: 1,
+				rawValue:         "1",
+				valueType:        int64Type,
+				validator: func(rawValue string) error {
+					return validateGreaterOrEqualThan(rawValue, 1)
+				},
+			},
 		},
 	}
 }
@@ -169,4 +169,8 @@ func (c *configOptions) LogLevel() string {
 func (c *configOptions) SetLogLevel(level string) {
 	c.options["LOG_LEVEL"].parsedStringValue = level
 	c.options["LOG_LEVEL"].rawValue = level
+}
+
+func (c *configOptions) NodeId() int64 {
+	return c.options["NODE_ID"].parsedInt64Value
 }

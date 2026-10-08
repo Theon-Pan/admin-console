@@ -2,6 +2,7 @@ package cli // import "admin-console/internal/cli"
 import (
 	"admin-console/internal/config"
 	"admin-console/internal/database"
+	"admin-console/internal/storage"
 	"flag"
 	"fmt"
 	"io"
@@ -9,21 +10,24 @@ import (
 )
 
 const (
-	flagMigrateHelp    = "Run SQL migrations"
-	flagDebugModeHelp  = "Show debug logs"
-	flagConfigFileHelp = "Load configuration file"
+	flagMigrateHelp     = "Run SQL migrations"
+	flagCreateAdminHelp = "Create an admin user from an interactive terminal"
+	flagDebugModeHelp   = "Show debug logs"
+	flagConfigFileHelp  = "Load configuration file"
 )
 
 // Parse parses command line arguments.
 func Parse() {
 	var (
-		err            error
-		flagMigrate    bool
-		flagDebugMode  bool
-		flagConfigFile string
+		err             error
+		flagMigrate     bool
+		flagCreateAdmin bool
+		flagDebugMode   bool
+		flagConfigFile  string
 	)
 
 	flag.BoolVar(&flagMigrate, "migrate", false, flagMigrateHelp)
+	flag.BoolVar(&flagCreateAdmin, "create-admin", false, flagCreateAdminHelp)
 	flag.BoolVar(&flagDebugMode, "debug", false, flagDebugModeHelp)
 	flag.StringVar(&flagConfigFile, "config-file", "", flagConfigFileHelp)
 	flag.Parse()
@@ -77,12 +81,21 @@ func Parse() {
 	}
 	defer db.Close()
 
+	store := storage.NewStorage(db)
+	if err := store.Ping(); err != nil {
+		printErrorAndExit(err)
+	}
+
+	if flagCreateAdmin {
+		createAdminUserFromInteractiveTerminal(store)
+		return
+	}
+
 	if flagMigrate {
-		println("Begin to do db migration")
 		if err := database.Migrate(db); err != nil {
 			printErrorAndExit(err)
 		}
-		println("Migration is done!")
+		return
 	}
 
 }

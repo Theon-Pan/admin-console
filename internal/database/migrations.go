@@ -13,7 +13,7 @@ var migrations = [...]func(tx *sql.Tx) error{
 
 			CREATE TABLE users (
 				id SERIAL,
-				user_id bigint,
+				user_id bigint not null unique,
 				username text not null unique,
 				nickname text,
 				email text,

@@ -7,13 +7,13 @@ type User struct {
 	ID          int        `json:"id"`
 	UserID      int64      `json:"user_id"`
 	Username    string     `json:"username"`
-	Nickname    string     `json:"nickname"`
-	Email       string     `json:"email"`
-	Phonenumber string     `json:"phonenumber"`
+	Nickname    *string    `json:"nickname"`
+	Email       *string    `json:"email"`
+	Phonenumber *string    `json:"phonenumber"`
 	Password    string     `json:"-"`
 	IsAdmin     bool       `json:"is_admin"`
 	LastLoginAt *time.Time `json:"last_login_at"`
-	Remark      string     `json:"remark"`
+	Remark      *string    `json:"remark"`
 }
 
 // UserCreationRequest represents the request structure for creating a new user

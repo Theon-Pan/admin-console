@@ -1,0 +1,5 @@
+{
+    "error.password_min_length": "The password must have at least 6 characters.",
+    "error.user_already_exists": "This user already exists.",
+    "error.user_mandatory_fields": "The username is mandatory."
+}
