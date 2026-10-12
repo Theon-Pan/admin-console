@@ -25,7 +25,7 @@ Create a new model represented by Golang struct type, the model_name `$ARGUMENTS
 | DATE     | *time.Time |
 | JSON     | []byte  |
 | JSONB    | []byte  |
-4. Add json tags to the struct fields, using the original column names in snake case style as the tag values.
+4. Add json tags to the struct fields, using the original column names in snake case style as the tag values. Before adding the tags, ask the user if they want to include the json tags.
 5. Also you can ask user if they want to generate two structs for creating and updating records. The create struct should include all fields except the primary key, and the update struct should include all fields as pointers to allow partial updates.The struct names should be derived from the model_name, with `CreationRequest` and `ModificationRequest` suffixes respectively.
 6. Ensure that the generated code is properly formatted according to Go conventions, including proper indentation and spacing.
 7. Include necessary import statements, such as `import "time"` if any of the struct fields use the `time.Time` type.
