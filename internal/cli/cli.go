@@ -98,6 +98,8 @@ func Parse() {
 		return
 	}
 
+	startDaemon(store)
+
 }
 
 func printErrorAndExit(err error) {

@@ -3,6 +3,8 @@ package model
 import (
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/json"
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -15,8 +17,8 @@ type WebSession struct {
 	CreatedAt  time.Time
 	UserAgent  string
 	IP         string
-	UserID     *int64
-	State      webSessionState
+	userID     *int64
+	state      webSessionState
 	dirty      bool
 }
 
@@ -48,7 +50,7 @@ func NewWebSession(userAgent, ip string) (*WebSession, string) {
 		UserAgent:  userAgent,
 		IP:         ip,
 	}
-	session.State.CSRF = rand.Text()
+	session.state.CSRF = rand.Text()
 
 	return session, secret
 }
@@ -56,4 +58,29 @@ func NewWebSession(userAgent, ip string) (*WebSession, string) {
 func hashWebSessionSecret(secret string) []byte {
 	sum := sha256.Sum256([]byte(secret))
 	return sum[:]
+}
+
+// VerifySecret reports whether the given raw secret matches the stored hash.
+func (s *WebSession) VerifySecret(secret string) bool {
+	if secret == "" || len(secret) == 0 {
+		return false
+	}
+
+	actual := hashWebSessionSecret(secret)
+	return subtle.ConstantTimeCompare(actual, s.SecretHash) == 1
+}
+
+// MarshalState serializes the session state to JSON for storage.
+func (s *WebSession) MarshalState() ([]byte, error) {
+	return json.Marshal(s.state)
+}
+
+// UnmarshalState populates the session state from raw JSON bytes.
+func (s *WebSession) UnmarshalState(data []byte) error {
+	s.state = webSessionState{}
+	if len(data) == 0 {
+		return nil
+	}
+
+	return json.Unmarshal(data, &s.state)
 }

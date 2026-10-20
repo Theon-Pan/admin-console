@@ -1,6 +1,7 @@
 package template // import "admin-console/internal/template"
 import (
 	"admin-console/internal/model"
+	"fmt"
 	"html/template"
 	"strings"
 )
@@ -13,7 +14,15 @@ type funcMap struct {
 // Map returns a map of template functions that are compiled during template parsing.
 func (f *funcMap) Map() template.FuncMap {
 	return template.FuncMap{
-		"csp": csp,
+		"contains":   strings.Contains,
+		"csp":        csp,
+		"startsWith": strings.HasPrefix,
+		"routePath": func(format string, args ...any) string {
+			if len(args) > 0 {
+				return f.basePath + fmt.Sprintf(format, args...)
+			}
+			return f.basePath + format
+		},
 	}
 }
 

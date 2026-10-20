@@ -51,6 +51,11 @@ func NewConfigOptions() *configOptions {
 		rootURL: "http://localhost",
 		baseURL: "",
 		options: map[string]*configValue{
+			"CLEANUP_REMOVE_SESSIONS_DAYS": {
+				parsedDuration: time.Hour * 24 * 30,
+				rawValue:       "30",
+				valueType:      dayType,
+			},
 			"DATABASE_CONNECTION_LIFETIME": {
 				parsedDuration: time.Minute * 5,
 				rawValue:       "5",
@@ -87,9 +92,22 @@ func NewConfigOptions() *configOptions {
 				valueType:         secretFileType,
 				targetKey:         "DATABASE_URL_AC",
 			},
+			"HTTPS": {
+				parsedBoolValue: false,
+				rawValue:        "0",
+				valueType:       boolType,
+			},
+			"HTTP_SERVER_TIMEOUT": {
+				parsedDuration: 300 * time.Second,
+				rawValue:       "300",
+				valueType:      secondType,
+				validator: func(rawValue string) error {
+					return validateGreaterOrEqualThan(rawValue, 1)
+				},
+			},
 			"LISTEN_ADDR": {
-				parsedStringList: []string{"127.0.0.1:8080"},
-				rawValue:         "127.0.0.1:8080",
+				parsedStringList: []string{"127.0.0.1:8081"},
+				rawValue:         "127.0.0.1:8081",
 				valueType:        stringListType,
 			},
 			"LOG_DATE_TIME": {
@@ -126,8 +144,24 @@ func NewConfigOptions() *configOptions {
 					return validateGreaterOrEqualThan(rawValue, 1)
 				},
 			},
+			"WORKER_POOL_SIZE": {
+				parsedIntValue: 16,
+				rawValue:       "16",
+				valueType:      intType,
+				validator: func(rawValue string) error {
+					return validateGreaterOrEqualThan(rawValue, 1)
+				},
+			},
 		},
 	}
+}
+
+func (c *configOptions) BasePath() string {
+	return c.baseURL
+}
+
+func (c *configOptions) CleanupRemoveSessionsInterval() time.Duration {
+	return c.options["CLEANUP_REMOVE_SESSIONS_DAYS"].parsedDuration
 }
 
 func (c *configOptions) DatabaseConnectionLifetime() time.Duration {
@@ -144,6 +178,14 @@ func (c *configOptions) DatabaseMinConns() int {
 
 func (c *configOptions) DatabaseURL() string {
 	return c.options["DATABASE_URL_AC"].parsedStringValue
+}
+
+func (c *configOptions) HTTPS() bool {
+	return c.options["HTTPS"].parsedBoolValue
+}
+
+func (c *configOptions) HTTPServerTimeout() time.Duration {
+	return c.options["HTTP_SERVER_TIMEOUT"].parsedDuration
 }
 
 func (c *configOptions) ListenAddr() []string {
@@ -173,4 +215,8 @@ func (c *configOptions) SetLogLevel(level string) {
 
 func (c *configOptions) NodeId() int64 {
 	return c.options["NODE_ID"].parsedInt64Value
+}
+
+func (c *configOptions) WorkerPoolSize() int {
+	return c.options["WORKER_POOL_SIZE"].parsedIntValue
 }
