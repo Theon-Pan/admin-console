@@ -3,6 +3,7 @@ module admin-console
 go 1.27.0
 
 require (
+	github.com/andybalholm/brotli v1.2.7
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/go-webauthn/webauthn v0.18.2
 	github.com/lib/pq v1.12.3
