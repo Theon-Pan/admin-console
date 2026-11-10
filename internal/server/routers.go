@@ -1,5 +1,6 @@
 package server // import "admin-console/internal/server"
 import (
+	"admin-console/internal/api"
 	"admin-console/internal/config"
 	"admin-console/internal/storage"
 	"admin-console/internal/worker"
@@ -13,6 +14,7 @@ func newRouter(store *storage.Storage, pool *worker.Pool) http.Handler {
 	appMux := http.NewServeMux()
 
 	appMux.HandleFunc("GET /healthcheck", readinessProbe)
+	appMux.Handle("/v1/", api.NewHandler(store, pool))
 
 	var appHandler http.Handler = appMux
 
