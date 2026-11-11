@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Captcha Login Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .captcha-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .captcha-group input {
+            flex: 1;
+        }
+
+        .captcha-image {
+            height: 40px;
+            border-radius: 4px;
+            border: 2px solid #e0e0e0;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .captcha-image:hover {
+            transform: scale(1.05);
+        }
+
+        .captcha-image:active {
+            transform: scale(0.95);
+        }
+
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+            text-decoration: underline;
+        }
+
+        .refresh-btn:hover {
+            color: #764ba2;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .info-box strong {
+            color: #667eea;
+        }
+
+        .info-box code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #764ba2;
+        }
+
+        .math-hint {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Login</h1>
+        <p class="subtitle">Math Captcha Example (base64Captcha)</p>
+
+        <div id="message" class="message"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required value="admin">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required value="admin123">
+            </div>
+
+            <div class="form-group">
+                <label for="captchaCode">Captcha (Solve the math)</label>
+                <div class="captcha-group">
+                    <input type="text" id="captchaCode" name="captchaCode" placeholder="Enter answer" required autocomplete="off">
+                    <img id="captchaImage" class="captcha-image" alt="Math Captcha" title="Click to refresh">
+                </div>
+                <div class="math-hint">
+                    💡 Solve the math expression (e.g., if image shows "3+7=?", enter "10")
+                </div>
+                <button type="button" class="refresh-btn" onclick="refreshCaptcha()">Refresh captcha</button>
+            </div>
+
+            <button type="submit" class="submit-btn">Login</button>
+        </form>
+
+        <div class="info-box">
+            <strong>Test Credentials:</strong><br>
+            Username: <code>admin</code><br>
+            Password: <code>admin123</code><br><br>
+            <strong>Captcha Library:</strong><br>
+            Using <code>github.com/mojocn/base64Captcha</code><br><br>
+            <strong>Features:</strong><br>
+            ✅ Math expressions (+, -, ×)<br>
+            ✅ Digit captchas<br>
+            ✅ String captchas<br>
+            ✅ Chinese characters<br>
+            ✅ Built-in verification
+        </div>
+    </div>
+
+    <script>
+        let captchaId = '';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            refreshCaptcha();
+        });
+
+        async function refreshCaptcha() {
+            try {
+                const response = await fetch('/api/captchaImage');
+                const data = await response.json();
+
+                captchaId = data.uuid;
+                const imgElement = document.getElementById('captchaImage');
+                imgElement.src = 'data:image/png;base64,' + data.img;
+                document.getElementById('captchaCode').value = '';
+                document.getElementById('captchaCode').focus();
+
+                console.log('Captcha UUID:', captchaId);
+                console.log('Captcha enabled:', data.captchaEnabled);
+            } catch (error) {
+                showMessage('Failed to load captcha', 'error');
+                console.error('Error loading captcha:', error);
+            }
+        }
+
+        document.getElementById('captchaImage').addEventListener('click', refreshCaptcha);
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = e.target.querySelector('.submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Logging in...';
+
+            const formData = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                captcha_id: captchaId,
+                captcha_code: document.getElementById('captchaCode').value
+            };
+
+            try {
+                const response = await fetch('/user/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Login successful! Token: ' + data.token, 'success');
+                } else {
+                    showMessage(data.message || 'Login failed', 'error');
+                    refreshCaptcha();
+                }
+            } catch (error) {
+                showMessage('Network error', 'error');
+                console.error('Error:', error);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Login';
+            }
+        });
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = 'message ' + type;
+            messageDiv.style.display = 'block';
+
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
