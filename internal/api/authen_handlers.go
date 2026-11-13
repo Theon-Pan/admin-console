@@ -7,7 +7,6 @@ import (
 	json_parser "encoding/json"
 	"log/slog"
 	"net/http"
-	"strings"
 )
 
 func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -21,14 +20,14 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check captcha code.
-	code, err := h.store.GetCaptchaCode(r.Context(), loginRequest.Uuid)
+	matched, err := h.store.VerifyCaptchaCode(r.Context(), loginRequest.Uuid, loginRequest.Code)
 	if err != nil {
 		apiResult := response.NewErrorResultWithMessage("Error when getting code")
 		response.JSON(w, r, apiResult)
 		return
 	}
-	if strings.Compare(code, loginRequest.Code) != 0 {
-		apiResult := response.NewErrorResultWithMessage("Invalid capcha code")
+	if !matched {
+		apiResult := response.NewErrorResultWithMessage("Invalid captcha code")
 		response.JSON(w, r, apiResult)
 		return
 	}
@@ -48,31 +47,39 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// // Retrieve the user detail info.
-	// user, err := h.store.UserByUsername(loginRequest.Username)
-	// if err != nil {
-	// 	slog.Warn("Error When retrieving user info by username",
-	// 		slog.String("username", loginRequest.Username),
-	// 		slog.Any("error", err),
-	// 	)
-	// 	// TODO: Use i18n to get error message.
-	// 	apiResult := response.NewErrorResultWithMessage("Incorrect username or password")
-	// 	response.JSON(w, r, apiResult)
-	// 	return
-	// }
+	// Retrieve the user detail info.
+	user, err := h.store.UserByUsername(loginRequest.Username)
+	if err != nil {
+		slog.Warn("Error When retrieving user info by username",
+			slog.String("username", loginRequest.Username),
+			slog.Any("error", err),
+		)
+		// TODO: Use i18n to get error message.
+		apiResult := response.NewErrorResultWithMessage("Incorrect username or password")
+		response.JSON(w, r, apiResult)
+		return
+	}
 
-	// if user == nil {
-	// 	slog.Warn("No user found",
-	// 		slog.String("username", loginRequest.Username),
-	// 	)
-	// 	// TODO: Use i18n to get error message.
-	// 	apiResult := response.NewErrorResultWithMessage("Incorrect username or password")
-	// 	response.JSON(w, r, apiResult)
-	// 	return
-	// }
+	if user == nil {
+		slog.Warn("No user found",
+			slog.String("username", loginRequest.Username),
+		)
+		// TODO: Use i18n to get error message.
+		apiResult := response.NewErrorResultWithMessage("Incorrect username or password")
+		response.JSON(w, r, apiResult)
+		return
+	}
 
 	// Generate a token.
 	uuid := utils.UUIDNewString()
+
+	// Save login user info for verification in future.
+	loginUser := model.NewLoginUser(user, uuid)
+	if err := h.store.StoreLoginUser(r.Context(), *loginUser); err != nil {
+		apiResult := response.NewErrorResultWithMessage("System error")
+		response.JSON(w, r, apiResult)
+		return
+	}
 
 	tokenClaims := utils.TokenClaims{
 		UUID: uuid,

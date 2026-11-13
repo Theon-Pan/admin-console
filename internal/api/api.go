@@ -19,5 +19,5 @@ func NewHandler(store *storage.Storage, pool *worker.Pool) http.Handler {
 	mux.HandleFunc("GET /api/captchaImage", handler.captchaImg)
 	mux.HandleFunc("POST /api/login", handler.Login)
 
-	return mux
+	return newAuthMiddleware(store).handle(mux)
 }
