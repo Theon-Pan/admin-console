@@ -57,6 +57,8 @@ func (m *authMiddleware) handle(next http.Handler) http.Handler {
 			unauthorized(w, r, "Login session expired, please login again", err)
 			return
 		}
+		slog.Info("Authentication passed",
+			slog.String("url", r.RequestURI))
 
 		ctx := context.WithValue(r.Context(), loginUserContextKey, loginUser)
 		next.ServeHTTP(w, r.WithContext(ctx))
