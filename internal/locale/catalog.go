@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-// go:embed translations/*.json
+//go:embed translations/*.json
 var translationFiles embed.FS
 
 type translationDict struct {

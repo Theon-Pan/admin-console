@@ -48,6 +48,22 @@ See `conf/admin-console.dev.conf` for an example of additional configuration opt
 
 ## Development
 
+### Debugging in VS Code
+
+Install the Go extension (`golang.go`) and use **Go: Install/Update Tools** from
+the Command Palette to install `dlv` (Delve).
+
+Start PostgreSQL and Redis/Valkey, and configure their connection settings in
+`conf/admin-console.dev.conf` or environment variables. Environment variables
+override the file; do not put credentials in the shared launch configuration.
+Run migrations and create an administrator account first if needed.
+
+Open the repository root in VS Code, set a breakpoint, select **Debug Admin
+Console** in **Run and Debug**, and press **F5**. The launch profile uses the
+development configuration with debug logging in the integrated terminal.
+Send an HTTP request to the configured listen address to hit handler breakpoints.
+Use **Shift+F5** to stop debugging.
+
 Run the Go test suite and build the application with:
 
 ```sh

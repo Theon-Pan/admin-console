@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Admin Console",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--config-file",
+                "${workspaceFolder}\\conf\\admin-console.dev.conf",
+                "--debug"
+            ],
+            "env": {
+                "LOG_FILE": "stdout"
+            },
+            "console": "integratedTerminal"
+        }
+    ]
+}

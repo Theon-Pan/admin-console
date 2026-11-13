@@ -11,7 +11,7 @@ func NewLocalizedError(translationKey string, translationArgs ...any) *Localized
 }
 
 func (v *LocalizedError) String() string {
-	return NewPrinter("en_US").Printf(v.translationKey, v.translationArgs...)
+	return NewPrinter("zh_CN").Printf(v.translationKey, v.translationArgs...)
 }
 
 func (v *LocalizedError) Error() error {
