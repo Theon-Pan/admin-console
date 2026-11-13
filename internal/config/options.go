@@ -152,6 +152,16 @@ func NewConfigOptions() *configOptions {
 					return validateGreaterOrEqualThan(rawValue, 1)
 				},
 			},
+			"REDIS_ADDR": {
+				parsedStringValue: "redis://localhost:6379/1",
+				rawValue:          "redis://localhost:637/1",
+				valueType:         stringType,
+			},
+			"REDIS_PASSWORD": {
+				parsedStringValue: "",
+				rawValue:          "",
+				valueType:         stringType,
+			},
 		},
 	}
 }
@@ -219,4 +229,12 @@ func (c *configOptions) NodeId() int64 {
 
 func (c *configOptions) WorkerPoolSize() int {
 	return c.options["WORKER_POOL_SIZE"].parsedIntValue
+}
+
+func (c *configOptions) RedisAddress() string {
+	return c.options["REDIS_ADDR"].parsedStringValue
+}
+
+func (c *configOptions) RedisPassword() string {
+	return c.options["REDIS_PASSWORD"].parsedStringValue
 }

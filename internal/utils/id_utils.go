@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/bwmarrin/snowflake"
+	"github.com/google/uuid"
 )
 
 var (
@@ -26,4 +27,8 @@ func initNode() {
 func GenerateID() int64 {
 	once.Do(initNode)
 	return snowflakeNode.Generate().Int64()
+}
+
+func UUIDNewString() string {
+	return uuid.NewString()
 }

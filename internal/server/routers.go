@@ -14,7 +14,7 @@ func newRouter(store *storage.Storage, pool *worker.Pool) http.Handler {
 	appMux := http.NewServeMux()
 
 	appMux.HandleFunc("GET /healthcheck", readinessProbe)
-	appMux.Handle("/v1/", api.NewHandler(store, pool))
+	appMux.Handle("/api/", api.NewHandler(store, pool))
 
 	var appHandler http.Handler = appMux
 

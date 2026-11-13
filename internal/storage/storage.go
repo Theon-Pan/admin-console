@@ -3,16 +3,19 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	goredis "github.com/redis/go-redis/v9"
 )
 
 // Storage handles all operations related to the database
 type Storage struct {
-	db *sql.DB
+	db          *sql.DB
+	redisClient *goredis.Client
 }
 
 // NewStorage returns a new Storage.
-func NewStorage(db *sql.DB) *Storage {
-	return &Storage{db: db}
+func NewStorage(db *sql.DB, redisClient *goredis.Client) *Storage {
+	return &Storage{db: db, redisClient: redisClient}
 }
 
 // DatabaseVersion returns the version of the database which is in use.
@@ -26,12 +29,14 @@ func (s *Storage) DatabaseVersion() string {
 	return dbVersion
 }
 
-// Ping checks if the database connection works.
+// Ping checks if the database connection and Redis/Valkey works.
 func (s *Storage) Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	return s.db.PingContext(ctx)
+	var err error
+	err = s.redisClient.Ping(ctx).Err()
+	err = s.db.PingContext(ctx)
+	return err
 }
 
 // DBStats returns database statistics.

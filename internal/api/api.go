@@ -16,7 +16,8 @@ func NewHandler(store *storage.Storage, pool *worker.Pool) http.Handler {
 	handler := &handler{store: store, pool: pool}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /v1/captchaImage", handler.captchaImg)
+	mux.HandleFunc("GET /api/captchaImage", handler.captchaImg)
+	mux.HandleFunc("POST /api/login", handler.Login)
 
 	return mux
 }

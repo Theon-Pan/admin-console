@@ -46,11 +46,41 @@ func JSONServerError(w http.ResponseWriter, r *http.Request, err error) {
 	NewBuilder(w, r).
 		WithStatus(http.StatusOK).
 		WithHeader("Content-Type", jsonContentTypeHeader).
-		WithBodyAsBytes(generateJSONError(err))
+		WithBodyAsBytes(generateJSONError(err)).
+		Write()
+}
+
+// JSONBadRequest sends a bad request error to the client.
+func JSONBadRequest(w http.ResponseWriter, r *http.Request, err error) {
+	slog.Warn(http.StatusText(http.StatusBadRequest),
+		slog.Any("error", err),
+		slog.String("client_ip", request.ClientIP(r)),
+		slog.Group("request",
+			slog.String("method", r.Method),
+			slog.String("uri", r.RequestURI),
+			slog.String("user_agent", r.UserAgent()),
+		),
+		slog.Group("response",
+			slog.Int("status_code", http.StatusBadRequest),
+		),
+	)
+
+	NewBuilder(w, r).
+		WithStatus(http.StatusBadRequest).
+		WithHeader("Content-Type", jsonContentTypeHeader).
+		WithBodyAsBytes(gernerateJSONErrorWithStatusCode(BadRequest, err)).
+		Write()
 }
 
 func generateJSONError(err error) []byte {
 	result := NewErrorResultWithMessage(err.Error())
+	encodeBody, _ := json.Marshal(result.data)
+
+	return encodeBody
+}
+
+func gernerateJSONErrorWithStatusCode(code StatusCode, err error) []byte {
+	result := NewErrorResultWithCodeAndMessage(code, err.Error())
 	encodeBody, _ := json.Marshal(result.data)
 
 	return encodeBody

@@ -3,6 +3,7 @@ import (
 	"admin-console/internal/http/response"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/mojocn/base64Captcha"
 )
@@ -10,10 +11,10 @@ import (
 func (h *handler) captchaImg(w http.ResponseWriter, r *http.Request) {
 	// Configure the math driver.
 	driver := &base64Captcha.DriverMath{
-		Height:          50,
-		Width:           200,
+		Height:          100,
+		Width:           250,
 		NoiseCount:      0,
-		ShowLineOptions: base64Captcha.OptionShowSlimeLine | base64Captcha.OptionShowSineLine,
+		ShowLineOptions: base64Captcha.OptionShowSlimeLine,
 	}
 
 	// Generate a math question (e.g., "3+7=?").
@@ -28,10 +29,14 @@ func (h *handler) captchaImg(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Save the answer to a temporary store, like Redis/Valkey
+	h.store.StoreCaptchaCode(r.Context(), id, answer)
 	fmt.Printf("answer: %v\n", answer)
 
-	// Get base 64 data-URI string (e.g. "data:image/png;base64, iVBOR...")
+	// Return only the Base64 payload, without the data-URI prefix.
 	b64s := item.EncodeB64string()
+	if _, encoded, found := strings.Cut(b64s, ","); found {
+		b64s = encoded
+	}
 
 	apiResult := response.NewSuccessResult().
 		SetExtra("uuid", id).

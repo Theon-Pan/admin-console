@@ -160,6 +160,7 @@ func (s *Storage) fetchUser(query string, args ...any) (*model.User, error) {
 		&user.Phonenumber,
 		&user.Password,
 		&user.IsAdmin,
+		&user.LastLoginAt,
 		&user.Remark,
 	)
 

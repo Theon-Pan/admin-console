@@ -2,11 +2,14 @@ package cli // import "admin-console/internal/cli"
 import (
 	"admin-console/internal/config"
 	"admin-console/internal/database"
+	"admin-console/internal/redis"
 	"admin-console/internal/storage"
 	"flag"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
+	"time"
 )
 
 const (
@@ -75,13 +78,27 @@ func Parse() {
 		config.Opts.DatabaseMaxConns(),
 		config.Opts.DatabaseConnectionLifetime(),
 	)
-
 	if err != nil {
 		printfAndExit("unable to connect to database: %v", err)
 	}
+	slog.Info("Database connected.")
 	defer db.Close()
 
-	store := storage.NewStorage(db)
+	redisClient, err := redis.NewClient(
+		config.Opts.RedisAddress(),
+		config.Opts.RedisPassword(),
+		1,
+		2,
+		20,
+		30*time.Minute,
+	)
+	slog.Info("Redis/Valkey connected.")
+	if err != nil {
+		printfAndExit("unable to connect to Redis/Valkey: %v", err)
+	}
+	defer redisClient.Close()
+
+	store := storage.NewStorage(db, redisClient)
 	if err := store.Ping(); err != nil {
 		printErrorAndExit(err)
 	}

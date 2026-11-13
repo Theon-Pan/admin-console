@@ -68,6 +68,14 @@ func NewErrorResultWithMessage(message string) *ApiResult {
 	return &ApiResult{data: data}
 }
 
+func NewErrorResultWithCodeAndMessage(code StatusCode, message string) *ApiResult {
+	data := make(ApiResultData)
+	data[code_tag] = code
+	data[message_tag] = message
+
+	return &ApiResult{data: data}
+}
+
 func (r *ApiResult) SetExtra(key string, value any) *ApiResult {
 	if r.data == nil {
 		r.data = make(ApiResultData)
