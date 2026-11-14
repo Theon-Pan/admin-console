@@ -3,5 +3,9 @@
     "error.user_already_exists": "This user already exists.",
     "error.user_mandatory_fields": "The username is mandatory.",
     "error.api.bad_request": "Bad request",
-    "error.api.internal_server_error": "Internal server error"
+    "error.api.internal_server_error": "Internal server error",
+    "error.api.invalid_captcha_code": "Invalid captcha code",
+    "error.api.incorrect_username_or_password": "Incorrect username or password",
+    "error.api.internal_error": "Internal error",
+    "api.success": "Success"
 }

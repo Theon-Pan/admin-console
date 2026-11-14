@@ -1,7 +1,8 @@
 package api // import "admin-console/internal/api"
 import (
+	"admin-console/internal/http/request"
 	"admin-console/internal/http/response"
-	"fmt"
+	"admin-console/internal/locale"
 	"net/http"
 	"strings"
 
@@ -23,14 +24,13 @@ func (h *handler) captchaImg(w http.ResponseWriter, r *http.Request) {
 	// Draw the captcha image.
 	item, err := driver.DrawCaptcha(question)
 	if err != nil {
-		apiResult := response.NewErrorResultWithMessage(err.Error())
+		apiResult := response.NewErrorResultWithMessage(locale.NewLocalizedError("error.api.internal_server_error").Translate(request.GetLocale(r)))
+		apiResult.SetError(&err)
 		response.JSON(w, r, apiResult)
 		return
 	}
 
-	// TODO: Save the answer to a temporary store, like Redis/Valkey
 	h.store.StoreCaptchaCode(r.Context(), id, answer)
-	fmt.Printf("answer: %v\n", answer)
 
 	// Return only the Base64 payload, without the data-URI prefix.
 	b64s := item.EncodeB64string()

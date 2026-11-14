@@ -14,6 +14,13 @@ func JSON(w http.ResponseWriter, r *http.Request, body any) {
 	var bodyToMarshal any
 	if result, ok := body.(*ApiResult); ok {
 		bodyToMarshal = result.GetData()
+		if result.GetError() != nil {
+			if code, ok := result.GetData()[code_tag].(int); ok {
+				LogError(r, code, *result.GetError())
+			}
+		} else {
+			LogInfo(r, http.StatusOK)
+		}
 	} else {
 		bodyToMarshal = body
 	}
@@ -22,7 +29,6 @@ func JSON(w http.ResponseWriter, r *http.Request, body any) {
 		JSONServerError(w, r, err)
 		return
 	}
-	LogInfo(r, http.StatusOK)
 
 	NewBuilder(w, r).
 		WithHeader("Content-Type", jsonContentTypeHeader).

@@ -22,6 +22,7 @@ const (
 )
 
 type ApiResult struct {
+	err  *error
 	data ApiResultData
 }
 
@@ -87,4 +88,12 @@ func (r *ApiResult) SetExtra(key string, value any) *ApiResult {
 
 func (r *ApiResult) GetData() ApiResultData {
 	return r.data
+}
+
+func (r *ApiResult) GetError() *error {
+	return r.err
+}
+
+func (r *ApiResult) SetError(err *error) {
+	r.err = err
 }
