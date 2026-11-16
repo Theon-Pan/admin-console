@@ -15,8 +15,8 @@ func JSON(w http.ResponseWriter, r *http.Request, body any) {
 	if result, ok := body.(*ApiResult); ok {
 		bodyToMarshal = result.GetData()
 		if result.GetError() != nil {
-			if code, ok := result.GetData()[code_tag].(int); ok {
-				LogError(r, code, *result.GetError())
+			if code, ok := result.GetData()[code_tag].(StatusCode); ok {
+				LogError(r, int(code), *result.GetError())
 			}
 		} else {
 			LogInfo(r, http.StatusOK)
@@ -54,7 +54,18 @@ func JSONBadRequest(w http.ResponseWriter, r *http.Request, err error) {
 	NewBuilder(w, r).
 		WithStatus(http.StatusBadRequest).
 		WithHeader("Content-Type", jsonContentTypeHeader).
-		WithBodyAsBytes(gernerateJSONErrorWithStatusCode(BadRequest, errorForResp)).
+		WithBodyAsBytes(generateJSONErrorWithStatusCode(BadRequest, errorForResp)).
+		Write()
+}
+
+// JSONUnauthorized sends a not authorized error to the client.
+func JSONUnauthorized(w http.ResponseWriter, r *http.Request) {
+	errorForResp := errors.New(locale.NewLocalizedError("error.api.unauthorized").Translate(request.GetLocale(r)))
+	LogWarn(r, http.StatusUnauthorized, errorForResp)
+	NewBuilder(w, r).
+		WithStatus(http.StatusOK).
+		WithHeader("Content-Type", jsonContentTypeHeader).
+		WithBodyAsBytes(generateJSONErrorWithStatusCode(Unauthorized, errorForResp)).
 		Write()
 }
 
@@ -65,7 +76,7 @@ func generateJSONError(err error) []byte {
 	return encodeBody
 }
 
-func gernerateJSONErrorWithStatusCode(code StatusCode, err error) []byte {
+func generateJSONErrorWithStatusCode(code StatusCode, err error) []byte {
 	return generateJSONErrorWithStatusCodeAndMessage(code, err.Error())
 }
 

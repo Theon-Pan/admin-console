@@ -9,30 +9,34 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"time"
 )
 
 const (
-	flagMigrateHelp     = "Run SQL migrations"
-	flagCreateAdminHelp = "Create an admin user from an interactive terminal"
-	flagDebugModeHelp   = "Show debug logs"
-	flagConfigFileHelp  = "Load configuration file"
+	flagConfigFileHelp        = "Load configuration file"
+	flagCreateAdminHelp       = "Create an admin user from an interactive terminal"
+	flagDebugModeHelp         = "Show debug logs"
+	flagMigrateHelp           = "Run SQL migrations"
+	flagJWTSecretGenerateHelp = "Generate JWT secret for APIs authentication, please specify the path in which the secret is saved"
 )
 
 // Parse parses command line arguments.
 func Parse() {
 	var (
-		err             error
-		flagMigrate     bool
-		flagCreateAdmin bool
-		flagDebugMode   bool
-		flagConfigFile  string
+		err                   error
+		flagConfigFile        string
+		flagCreateAdmin       bool
+		flagDebugMode         bool
+		flagMigrate           bool
+		flagJWTSecretGenerate string
 	)
 
-	flag.BoolVar(&flagMigrate, "migrate", false, flagMigrateHelp)
 	flag.BoolVar(&flagCreateAdmin, "create-admin", false, flagCreateAdminHelp)
-	flag.BoolVar(&flagDebugMode, "debug", false, flagDebugModeHelp)
 	flag.StringVar(&flagConfigFile, "config-file", "", flagConfigFileHelp)
+	flag.BoolVar(&flagDebugMode, "debug", false, flagDebugModeHelp)
+	flag.BoolVar(&flagMigrate, "migrate", false, flagMigrateHelp)
+	flag.StringVar(&flagJWTSecretGenerate, "jwt-secret-gen", "", flagJWTSecretGenerateHelp)
 	flag.Parse()
 
 	cfg := config.NewConfigParser()
@@ -42,6 +46,14 @@ func Parse() {
 		if err != nil {
 			printErrorAndExit(err)
 		}
+	}
+
+	if flagJWTSecretGenerate != "" {
+		if !filepath.IsAbs(flagJWTSecretGenerate) {
+			printfAndExit("unable to write JWTKey to the path: %s , please specify an absolute path.", flagJWTSecretGenerate)
+		}
+		generateJWTSecret(flagJWTSecretGenerate)
+		return
 	}
 
 	config.Opts, err = cfg.ParseEnvironmentVariables()

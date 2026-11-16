@@ -14,10 +14,11 @@ type handler struct {
 // The returned handler expects the base path to be stripped from the request URL.
 func NewHandler(store *storage.Storage, pool *worker.Pool) http.Handler {
 	handler := &handler{store: store, pool: pool}
+	middleware := newMiddleware(store)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/captchaImage", handler.captchaImg)
 	mux.HandleFunc("POST /api/login", handler.Login)
 
-	return newAuthMiddleware(store).handle(mux)
+	return middleware.withCORSHeaders(middleware.validateJWTokenAuth(mux))
 }

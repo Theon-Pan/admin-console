@@ -105,6 +105,18 @@ func NewConfigOptions() *configOptions {
 					return validateGreaterOrEqualThan(rawValue, 1)
 				},
 			},
+			"JWT_SECRET": {
+				parsedStringValue: "",
+				rawValue:          "",
+				valueType:         stringType,
+				secret:            true,
+			},
+			"JWT_SECRET_FILE": {
+				parsedStringValue: "",
+				rawValue:          "",
+				valueType:         secretFileType,
+				targetKey:         "JWT_SECRET",
+			},
 			"LISTEN_ADDR": {
 				parsedStringList: []string{"127.0.0.1:8081"},
 				rawValue:         "127.0.0.1:8081",
@@ -196,6 +208,10 @@ func (c *configOptions) HTTPS() bool {
 
 func (c *configOptions) HTTPServerTimeout() time.Duration {
 	return c.options["HTTP_SERVER_TIMEOUT"].parsedDuration
+}
+
+func (c *configOptions) JWTSecret() string {
+	return c.options["JWT_SECRET"].parsedStringValue
 }
 
 func (c *configOptions) ListenAddr() []string {

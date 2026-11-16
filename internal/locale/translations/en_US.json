@@ -7,5 +7,6 @@
     "error.api.invalid_captcha_code": "Invalid captcha code",
     "error.api.incorrect_username_or_password": "Incorrect username or password",
     "error.api.internal_error": "Internal error",
+    "error.api.unauthorized": "Unauthorized request",
     "api.success": "Success"
 }
