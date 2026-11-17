@@ -23,7 +23,7 @@ func startDaemon(store *storage.Storage) {
 	reload := make(chan os.Signal, 1)
 	signal.Notify(reload, syscall.SIGHUP)
 
-	pool := worker.NewPool(store, config.Opts.WorkerPoolSize())
+	pool := worker.NewPool(store, config.Opts.WorkerPoolSize(), 1024, 10, 60*time.Second)
 
 	var httpServers []*http.Server
 	var certReloadFn func()

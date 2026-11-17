@@ -7,7 +7,7 @@ import (
 
 func Migrate(db *sql.DB) error {
 	var currentVersion int
-	db.QueryRow(`SELECT version FROM schema_version`).Scan(&currentVersion)
+	db.QueryRow(`SELECT version FROM sys_schema_version`).Scan(&currentVersion)
 
 	slog.Info("Running database migrations",
 		slog.Int("current_version", currentVersion),
@@ -27,12 +27,12 @@ func Migrate(db *sql.DB) error {
 			return fmt.Errorf("[Migration v%d] %v", newVersion, err)
 		}
 
-		if _, err := tx.Exec(`TRUNCATE schema_version`); err != nil {
+		if _, err := tx.Exec(`TRUNCATE sys_schema_version`); err != nil {
 			tx.Rollback()
 			return fmt.Errorf("[Migration v%d] %v", newVersion, err)
 		}
 
-		if _, err := tx.Exec(`INSERT INTO schema_version (version) VALUES ($1)`, newVersion); err != nil {
+		if _, err := tx.Exec(`INSERT INTO sys_schema_version (version) VALUES ($1)`, newVersion); err != nil {
 			tx.Rollback()
 			return fmt.Errorf("[Migration v%d] %v", newVersion, err)
 		}
@@ -48,7 +48,7 @@ func Migrate(db *sql.DB) error {
 // IsSchemaUpToDate checks if the database schema is up to date.
 func IsSchemaUpToDate(db *sql.DB) error {
 	var currentVersion int
-	db.QueryRow(`SELECT version FROM schema_version`).Scan(&currentVersion)
+	db.QueryRow(`SELECT version FROM sys_schema_version`).Scan(&currentVersion)
 	if currentVersion < schemaVersion {
 		return fmt.Errorf(`the database schema is not up to date: current=v%d expected=v%d`, currentVersion, schemaVersion)
 	}

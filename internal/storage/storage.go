@@ -29,6 +29,23 @@ func (s *Storage) DatabaseVersion() string {
 	return dbVersion
 }
 
+// DatabaseVersionContext does the same things as DatabaseVersion, but should be under a specified context.
+func (s *Storage) DatabaseVersionContext(ctx context.Context) string {
+	var dbVersion string
+	stmt, err := s.db.PrepareContext(ctx, `SELECT current_setting('server_version')`)
+	if err != nil {
+		return err.Error()
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRowContext(ctx).Scan(&dbVersion)
+	if err != nil {
+		return err.Error()
+	}
+
+	return dbVersion
+}
+
 // Ping checks if the database connection and Redis/Valkey works.
 func (s *Storage) Ping() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -49,6 +66,23 @@ func (s *Storage) DBSize() (string, error) {
 	var size string
 
 	err := s.db.QueryRow("SELECT pg_size_pretty(pg_database_size(current_database()))").Scan(&size)
+	if err != nil {
+		return "", err
+	}
+
+	return size, nil
+}
+
+// DBSizeContext does the same things as DBSize, but should be under a specified context.
+func (s *Storage) DBSizeContext(ctx context.Context) (string, error) {
+	var size string
+
+	stmt, err := s.db.PrepareContext(ctx, `SELECT pg_size_pretty(pg_database_size(current_database()))`)
+	if err != nil {
+		return "", err
+	}
+
+	err = stmt.QueryRowContext(ctx).Scan(&size)
 	if err != nil {
 		return "", err
 	}

@@ -2,6 +2,7 @@ package storage // import "admin-console/internal/storage"
 import (
 	"admin-console/internal/crypto"
 	"admin-console/internal/model"
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -19,6 +20,22 @@ func (s *Storage) UserExists(username string) bool {
 	return result
 }
 
+// UserExistsContext does the same things as UserExists, but should be under a specified context.
+func (s *Storage) UserExistsContext(ctx context.Context, username string) bool {
+	var result bool
+	stmt, err := s.db.PrepareContext(ctx, "SELECT true FROM users WHERE username=? LIMIT 1")
+	if err != nil {
+		return false
+	}
+
+	err = stmt.QueryRowContext(ctx, username).Scan(&result)
+	if err != nil {
+		return false
+	}
+
+	return result
+}
+
 // CreateUser creates a new user.
 func (s *Storage) CreateUser(userCreationRequest *model.UserCreationRequest) (*model.User, error) {
 	var hashedPassword string
@@ -31,7 +48,7 @@ func (s *Storage) CreateUser(userCreationRequest *model.UserCreationRequest) (*m
 	}
 
 	query := `
-		INSERT INTO users
+		INSERT INTO sys_users
 			(user_id, username, password, is_admin)
 		VALUES
 			($1, LOWER($2), $3, $4)
@@ -97,7 +114,7 @@ func (s *Storage) UserByID(userID int64) (*model.User, error) {
 			last_login_at,
 			remark
 		FROM
-			users
+			sys_users
 		where
 			user_id = $1
 	`
@@ -120,7 +137,7 @@ func (s *Storage) UserByUsername(username string) (*model.User, error) {
 			last_login_at,
 			remark
 		FROM
-			users
+			sys_users
 		where
 			username = LOWER($1)
 	`
@@ -133,7 +150,7 @@ func (s *Storage) CheckPassword(username, password string) error {
 	var hash string
 	username = strings.ToLower(username)
 
-	err := s.db.QueryRow("SELECT password FROM users WHERE username=$1", username).Scan(&hash)
+	err := s.db.QueryRow("SELECT password FROM sys_users WHERE username=$1", username).Scan(&hash)
 	if errors.Is(err, sql.ErrNoRows) {
 		// Perform a dummy bcrypt comparison against the hashed `password` string to avoid leaking whether the user exists via response timing.
 		_ = bcrypt.CompareHashAndPassword(dummyBcryptHash, []byte(password))

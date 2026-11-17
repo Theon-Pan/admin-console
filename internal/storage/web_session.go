@@ -18,7 +18,7 @@ func (s *Storage) CreateWebSession(session *model.WebSession) error {
 	}
 
 	query := `
-		INSERT INTO web_sesions (
+		INSERT INTO sys_web_sesions (
 			id,
 			secret_hash,
 			user_agent,
@@ -60,7 +60,7 @@ func (s *Storage) WebSessionByID(sessionID string) (*model.WebSession, error) {
 			ip,
 			state
 		FROM
-			web_sessions
+			sys_web_sessions
 		WHERE
 			id=$1
 	`, sessionID)

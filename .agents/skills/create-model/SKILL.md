@@ -12,19 +12,19 @@ Create a new model represented by Golang struct type, the model_name `$ARGUMENTS
 2. Generate a Golang struct type based on the retrieved schema information, using the model_name as the struct name, in Upper Camel Case, if the model_name is plural, convert it to singular form.
 3. The member fields of the struct should correspond to the columns of the table, convert the column names which are named in snake case style to Upper Camel Case. And the data types should be mapped appropriately from SQL types to Go types, using the below mapping, do not use pointer except in the update struct:
 
-| SQL Type | Go Type |
-|----------|---------|
-| INTEGER  | int     |
-| BIGINT   | int64   |
-| SERIAL   | int     |
-| BIGSERIAL| int64   |
-| VARCHAR  | string  |
-| TEXT     | string  |
-| BOOLEAN  | bool    |
-| TIMESTAMP| *time.Time |
-| DATE     | *time.Time |
-| JSON     | []byte  |
-| JSONB    | []byte  |
+| SQL Type | Go Type | Go type if nullable |
+|----------|---------|----------------------|
+| INTEGER  | int     | int |
+| BIGINT   | int64   | int64 |
+| SERIAL   | int     | int |
+| BIGSERIAL| int64   | int64 |
+| VARCHAR  | string  | *string |
+| TEXT     | string  | *string |
+| BOOLEAN  | bool    | bool |
+| TIMESTAMP| *time.Time | *time.Time |
+| DATE     | *time.Time | *time.Time |
+| JSON     | []byte  | []byte |
+| JSONB    | []byte  | []byte |
 4. Add json tags to the struct fields, using the original column names in snake case style as the tag values.
 5. Also you can ask user if they want to generate two structs for creating and updating records. The create struct should include all fields except the primary key, and the update struct should include all fields as pointers to allow partial updates.The struct names should be derived from the model_name, with `CreationRequest` and `ModificationRequest` suffixes respectively.
 6. Ensure that the generated code is properly formatted according to Go conventions, including proper indentation and spacing.
