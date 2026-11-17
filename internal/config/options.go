@@ -156,9 +156,33 @@ func NewConfigOptions() *configOptions {
 					return validateGreaterOrEqualThan(rawValue, 1)
 				},
 			},
+			"WORKER_CIRCUIT_BREAKER_THREDHOLD": {
+				parsedIntValue: 10,
+				rawValue:       "10",
+				valueType:      intType,
+				validator: func(rawValue string) error {
+					return validateGreaterOrEqualThan(rawValue, 1)
+				},
+			},
+			"WORKER_JOB_TIMEOUT": {
+				parsedDuration: 60 * time.Second,
+				rawValue:       "60",
+				valueType:      secondType,
+				validator: func(rawValue string) error {
+					return validateGreaterOrEqualThan(rawValue, 1)
+				},
+			},
 			"WORKER_POOL_SIZE": {
 				parsedIntValue: 16,
 				rawValue:       "16",
+				valueType:      intType,
+				validator: func(rawValue string) error {
+					return validateGreaterOrEqualThan(rawValue, 1)
+				},
+			},
+			"POOL_QUEUE_SIZE": {
+				parsedIntValue: 1024,
+				rawValue:       "1024",
 				valueType:      intType,
 				validator: func(rawValue string) error {
 					return validateGreaterOrEqualThan(rawValue, 1)
@@ -243,8 +267,20 @@ func (c *configOptions) NodeId() int64 {
 	return c.options["NODE_ID"].parsedInt64Value
 }
 
+func (c *configOptions) WorkerCircuitBreakerThredhold() int {
+	return c.options["WORKER_CIRCUIT_BREAKER_THREDHOLD"].parsedIntValue
+}
+
+func (c *configOptions) WorkerJobTimeout() time.Duration {
+	return c.options["WORKER_JOB_TIMEOUT"].parsedDuration
+}
+
 func (c *configOptions) WorkerPoolSize() int {
 	return c.options["WORKER_POOL_SIZE"].parsedIntValue
+}
+
+func (c *configOptions) PoolQueueSize() int {
+	return c.options["POOL_QUEUE_SIZE"].parsedIntValue
 }
 
 func (c *configOptions) RedisAddress() string {
