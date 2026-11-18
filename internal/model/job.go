@@ -4,11 +4,11 @@ import "time"
 type JobType string
 
 const (
-	JobRecordLogin JobType = "record_login"
-	JobMock        JobType = "mock"
+	JobTypeRecordLogin JobType = "record_login"
+	JobTypeMock        JobType = "mock"
 )
 
-type MockJobArg struct {
+type MockJobRequest struct {
 	SleepTime     time.Duration
 	ReturnSuccess bool
 }

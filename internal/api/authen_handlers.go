@@ -8,6 +8,7 @@ import (
 	json_parser "encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -19,6 +20,17 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ip := request.ClientIP(r)
+	userAgent := r.UserAgent()
+
+	loginInfoRequest := &model.LoginInfoCreationRequest{
+		Username: loginRequest.Username,
+	}
+	if ip != "" {
+		loginInfoRequest.IP = &ip
+	}
+	loginInfoRequest.Browser = &userAgent
+
 	// Check captcha code.
 	matched, err := h.store.VerifyCaptchaCode(r.Context(), loginRequest.Uuid, loginRequest.Code)
 	if err != nil {
@@ -28,8 +40,15 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !matched {
-		apiResult := response.NewErrorResultWithMessage(locale.NewLocalizedError("error.api.invalid_captcha_code").Translate(request.GetLocale(r)))
+		errorMessage := locale.NewLocalizedError("error.api.invalid_captcha_code").Translate(request.GetLocale(r))
+		apiResult := response.NewErrorResultWithMessage(errorMessage)
 		response.JSON(w, r, apiResult)
+		// Recording login information asynchronously.
+		login_at := time.Now().UTC()
+		loginInfoRequest.Status = model.LoginFailed
+		loginInfoRequest.Message = &errorMessage
+		loginInfoRequest.LoginAt = &login_at
+		h.EnqueueJob(loginInfoRequest)
 		return
 	}
 
@@ -42,9 +61,16 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		// 	slog.String("username", loginRequest.Username),
 		// 	slog.Any("error", err),
 		// )
-		apiResult := response.NewErrorResultWithMessage(locale.NewLocalizedError("error.api.incorrect_username_or_password").Translate(request.GetLocale(r)))
+		errorMessage := locale.NewLocalizedError("error.api.incorrect_username_or_password").Translate(request.GetLocale(r))
+		apiResult := response.NewErrorResultWithMessage(errorMessage)
 		apiResult.SetError(&err)
 		response.JSON(w, r, apiResult)
+		// Recording login information asynchronously.
+		login_at := time.Now().UTC()
+		loginInfoRequest.Status = model.LoginFailed
+		loginInfoRequest.Message = &errorMessage
+		loginInfoRequest.LoginAt = &login_at
+		h.EnqueueJob(loginInfoRequest)
 		return
 	}
 
@@ -69,6 +95,8 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		response.JSON(w, r, apiResult)
 		return
 	}
+
+	loginInfoRequest.UserID = user.UserID
 
 	// Generate a token.
 	uuid := utils.UUIDNewString()
@@ -109,24 +137,15 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		slog.String("Issuer", tokenClaimsForValidation.Issuer),
 		slog.String("ID", tokenClaimsForValidation.ID))
 
-	ip := request.ClientIP(r)
-	userAgent := r.UserAgent()
-	go func() {
-		loginInfoRequest := model.NewLoginInfoCreationRequest(user)
-		if ip != "" {
-			loginInfoRequest.IP = &ip
-		}
-		loginInfoRequest.Browser = &userAgent
-		var jobArg any = loginInfoRequest
-		job := model.Job{
-			UserID: user.UserID,
-			Type:   model.JobRecordLogin,
-			JobArg: &jobArg,
-		}
-		h.pool.Push(model.JobList{job})
-	}()
+	successMessage := locale.NewLocalizedError("api.success").Translate(request.GetLocale(r))
+	// Recording login information asynchronously.
+	login_at := time.Now().UTC()
+	loginInfoRequest.Status = model.LoginSuccess
+	loginInfoRequest.Message = &successMessage
+	loginInfoRequest.LoginAt = &login_at
+	go h.EnqueueJob(loginInfoRequest)
 
-	apiResult := response.NewSucceesResultWithMessage(locale.NewLocalizedError("api.success").Translate(request.GetLocale(r)))
+	apiResult := response.NewSucceesResultWithMessage(successMessage)
 	apiResult.SetExtra("token", token)
 	response.JSON(w, r, apiResult)
 }

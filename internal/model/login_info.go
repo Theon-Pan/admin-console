@@ -4,16 +4,23 @@ import (
 	"time"
 )
 
+type LoginStatus string
+
+const (
+	LoginSuccess LoginStatus = "0"
+	LoginFailed  LoginStatus = "1"
+)
+
 type LoginInfoCreationRequest struct {
-	UserID        int64      `json:"user_id"`
-	Username      string     `json:"username"`
-	IP            *string    `json:"ip"`
-	LoginLocation *string    `json:"login_location"`
-	Browser       *string    `json:"browser"`
-	OS            *string    `json:"os"`
-	Status        string     `json:"status"`
-	Message       *string    `json:"message"`
-	LoginAt       *time.Time `json:"login_at"`
+	UserID        int64       `json:"user_id"`
+	Username      string      `json:"username"`
+	IP            *string     `json:"ip"`
+	LoginLocation *string     `json:"login_location"`
+	Browser       *string     `json:"browser"`
+	OS            *string     `json:"os"`
+	Status        LoginStatus `json:"status"`
+	Message       *string     `json:"message"`
+	LoginAt       *time.Time  `json:"login_at"`
 }
 
 // LoginInfo represents a login record in the database.

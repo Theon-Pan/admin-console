@@ -20,7 +20,7 @@ type worker struct {
 func (w *worker) Run(c <-chan model.Job, shutdown <-chan struct{}, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	slog.Debug("Worker started",
+	slog.Debug("[WORKER_POOL]---Worker started",
 		slog.Int("worker_id", w.id),
 		slog.Duration("job_timeout", w.jobTimeout),
 	)
@@ -48,14 +48,15 @@ func (w *worker) executeJobWithDispatcher(job model.Job, dispatch func(context.C
 		var allowed bool
 		generation, allowed = w.breaker.allow()
 		if !allowed {
-			slog.Warn("Skipping job: worker circuit breaker is open or probing",
+			slog.Warn("[WORKER_POOL]---Skipping job: worker circuit breaker is open or probing",
 				slog.Int("worker_id", w.id),
 			)
 			return
 		}
 	}
 
-	slog.Debug("Job received by worker",
+	slog.Debug("[WORKER_POOL]---Job received by worker",
+		slog.String("job_type", string(job.Type)),
 		slog.Int("worker_id", w.id),
 		slog.Int64("user_id", job.UserID),
 	)
@@ -64,7 +65,8 @@ func (w *worker) executeJobWithDispatcher(job model.Job, dispatch func(context.C
 
 	err := dispatch(ctx, job)
 	if ctx.Err() != nil {
-		slog.Warn("Job exceeded worker timeout",
+		slog.Warn("[WORKER_POOL]---Job exceeded worker timeout",
+			slog.String("job_type", string(job.Type)),
 			slog.Int("worker_id", w.id),
 			slog.Duration("timeout", w.jobTimeout),
 			slog.Any("error", err),
@@ -76,7 +78,8 @@ func (w *worker) executeJobWithDispatcher(job model.Job, dispatch func(context.C
 	}
 
 	if err != nil {
-		slog.Error("Error when running worker",
+		slog.Error("[WORKER_POOL]---Error when running worker",
+			slog.String("job_type", string(job.Type)),
 			slog.Int("worker_id", w.id),
 			slog.Any("error", err),
 		)
@@ -93,9 +96,9 @@ func (w *worker) executeJobWithDispatcher(job model.Job, dispatch func(context.C
 
 func (w *worker) jobDispatcher(ctx context.Context, job model.Job) error {
 	switch job.Type {
-	case model.JobRecordLogin:
+	case model.JobTypeRecordLogin:
 		if job.JobArg == nil {
-			return fmt.Errorf("Error when executing job of recording login info, no arg specified.")
+			return fmt.Errorf("[WORKER_POOL]---Error when executing job of recording login info, no arg specified.")
 		}
 
 		if loginInfoRequest, ok := (*job.JobArg).(*model.LoginInfoCreationRequest); ok {
@@ -103,22 +106,22 @@ func (w *worker) jobDispatcher(ctx context.Context, job model.Job) error {
 				return err
 			}
 		}
-	case model.JobMock:
+	case model.JobTypeMock:
 		sleepTime := 2 * time.Second
 		if job.JobArg == nil {
-			slog.Warn("No arg, just sleep in default time, and return successfully.",
+			slog.Warn("[WORKER_POOL]---No arg, just sleep in default time, and return successfully.",
 				slog.Int("sleep_time", 2),
 			)
 			time.Sleep(sleepTime)
 			return nil
 		}
-		if mockArg, ok := (*job.JobArg).(*model.MockJobArg); ok {
+		if mockArg, ok := (*job.JobArg).(*model.MockJobRequest); ok {
 			sleepTime = mockArg.SleepTime
 			time.Sleep(sleepTime)
 			if mockArg.ReturnSuccess {
 				return nil
 			} else {
-				return fmt.Errorf("Mock an error return from Mock Job.")
+				return fmt.Errorf("[WORKER_POOL]---Mock an error return from Mock Job.")
 			}
 		}
 

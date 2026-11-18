@@ -61,7 +61,7 @@ var migrations = [...]func(tx *sql.Tx) error{
 		_, err = tx.Exec(`
 			CREATE TABLE sys_login_info (
 				info_id SERIAL,
-				user_id bigint not null,
+				user_id bigint,
 				username text not null,
 				ip inet,
 				login_location text,

@@ -69,10 +69,10 @@ func TestCircuitBreakerAvailable(t *testing.T) {
 		pool := NewPool(nil, threshold, 10, threshold, time.Second)
 		defer pool.Shutdown()
 
-		failure := any(&model.MockJobArg{SleepTime: jobDuration})
+		failure := any(&model.MockJobRequest{SleepTime: jobDuration})
 		jobs := make(model.JobList, threshold)
 		for i := range jobs {
-			jobs[i] = model.Job{UserID: 1, Type: model.JobMock, JobArg: &failure}
+			jobs[i] = model.Job{UserID: 1, Type: model.JobTypeMock, JobArg: &failure}
 		}
 		pool.Push(jobs)
 		time.Sleep(jobDuration)
@@ -86,8 +86,8 @@ func TestCircuitBreakerAvailable(t *testing.T) {
 			t.Fatal("breaker should remain open until a successful probe")
 		}
 
-		success := any(&model.MockJobArg{SleepTime: jobDuration, ReturnSuccess: true})
-		pool.Push(model.JobList{{UserID: 1, Type: model.JobMock, JobArg: &success}})
+		success := any(&model.MockJobRequest{SleepTime: jobDuration, ReturnSuccess: true})
+		pool.Push(model.JobList{{UserID: 1, Type: model.JobTypeMock, JobArg: &success}})
 		time.Sleep(jobDuration)
 		synctest.Wait()
 		if pool.IsCircuitBreakerOpened() {

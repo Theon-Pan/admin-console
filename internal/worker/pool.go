@@ -119,7 +119,7 @@ func (b *circuitBreaker) recordSuccess(generation uint64) {
 	if b.state == breakerHalfOpen {
 		b.state = breakerClosed
 		b.generation++
-		slog.Info("Worker circuit breaker closed, resuming job processing")
+		slog.Info("[WORKER_POOL]---Worker circuit breaker closed, resuming job processing")
 	}
 }
 
@@ -134,7 +134,7 @@ func (b *circuitBreaker) recordFailure(generation uint64) {
 		b.state = breakerOpen
 		b.generation++
 		b.retryAt = time.Now().Add(breakerCooldown)
-		slog.Warn("Worker circuit breaker opened due to consecutive failures",
+		slog.Warn("[WORKER_POOL]---Worker circuit breaker opened due to consecutive failures",
 			slog.Int64("consecutive_failures", b.consecutive),
 			slog.Int64("threshold", b.threshold),
 			slog.Duration("cooldown", breakerCooldown),
