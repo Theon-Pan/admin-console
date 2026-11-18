@@ -37,6 +37,14 @@ func (p *Pool) Shutdown() {
 	p.wg.Wait()
 }
 
+// IsCircuitBreakerOpened reports whether the breaker is open or half-open
+// without reserving the recovery probe.
+func (p *Pool) IsCircuitBreakerOpened() bool {
+	p.breaker.mu.Lock()
+	defer p.breaker.mu.Unlock()
+	return p.breaker.state != breakerClosed
+}
+
 // NewPool creates a pool of background workers.
 func NewPool(store *storage.Storage, nbWorkers, queueSize, circuitBreakerThreshold int, jobTimeout time.Duration) *Pool {
 	workerPool := &Pool{

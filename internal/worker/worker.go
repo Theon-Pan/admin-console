@@ -3,6 +3,7 @@ import (
 	"admin-console/internal/model"
 	"admin-console/internal/storage"
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -91,5 +92,37 @@ func (w *worker) executeJobWithDispatcher(job model.Job, dispatch func(context.C
 }
 
 func (w *worker) jobDispatcher(ctx context.Context, job model.Job) error {
-	return ctx.Err()
+	switch job.Type {
+	case model.JobRecordLogin:
+		if job.JobArg == nil {
+			return fmt.Errorf("Error when executing job of recording login info, no arg specified.")
+		}
+
+		if loginInfoRequest, ok := (*job.JobArg).(*model.LoginInfoCreationRequest); ok {
+			if _, err := w.store.InsertLoginInfoContext(ctx, loginInfoRequest); err != nil {
+				return err
+			}
+		}
+	case model.JobMock:
+		sleepTime := 2 * time.Second
+		if job.JobArg == nil {
+			slog.Warn("No arg, just sleep in default time, and return successfully.",
+				slog.Int("sleep_time", 2),
+			)
+			time.Sleep(sleepTime)
+			return nil
+		}
+		if mockArg, ok := (*job.JobArg).(*model.MockJobArg); ok {
+			sleepTime = mockArg.SleepTime
+			time.Sleep(sleepTime)
+			if mockArg.ReturnSuccess {
+				return nil
+			} else {
+				return fmt.Errorf("Mock an error return from Mock Job.")
+			}
+		}
+
+	}
+
+	return nil
 }

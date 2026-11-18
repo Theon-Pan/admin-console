@@ -6,8 +6,95 @@ import (
 	"errors"
 	"sync"
 	"testing"
+	"testing/synctest"
 	"time"
 )
+
+func TestPushAfterShutdownDiscardsJobs(t *testing.T) {
+	pool := NewPool(nil, 2, 1, 10, 60*time.Second)
+	pool.Shutdown()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		pool.Push(model.JobList{
+			{UserID: 0},
+			{UserID: 1},
+		})
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Push blocked after Shutdown instead of discard job and return immediately.")
+	}
+}
+
+func TestShutdownUnblocksPendingPush(t *testing.T) {
+	pool := NewPool(nil, 0, 1, 10, 60*time.Second)
+
+	pushed := make(chan struct{})
+	go func() {
+		defer close(pushed)
+		pool.Push(model.JobList{{UserID: 1}})
+	}()
+
+	// Give Push time to block on the unbuffered queue before shutting down.
+	time.Sleep(10 * time.Millisecond)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		pool.Shutdown()
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Shutdown deadlocked while a Push was pending.")
+	}
+
+	select {
+	case <-pushed:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Push remained blocked after Shutdown")
+	}
+
+}
+
+func TestCircuitBreakerAvailable(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		const threshold = 5
+		const jobDuration = 2 * time.Millisecond
+		pool := NewPool(nil, threshold, 10, threshold, time.Second)
+		defer pool.Shutdown()
+
+		failure := any(&model.MockJobArg{SleepTime: jobDuration})
+		jobs := make(model.JobList, threshold)
+		for i := range jobs {
+			jobs[i] = model.Job{UserID: 1, Type: model.JobMock, JobArg: &failure}
+		}
+		pool.Push(jobs)
+		time.Sleep(jobDuration)
+		synctest.Wait()
+		if !pool.IsCircuitBreakerOpened() {
+			t.Fatal("breaker did not open after reaching the failure threshold")
+		}
+
+		time.Sleep(breakerCooldown)
+		if !pool.IsCircuitBreakerOpened() {
+			t.Fatal("breaker should remain open until a successful probe")
+		}
+
+		success := any(&model.MockJobArg{SleepTime: jobDuration, ReturnSuccess: true})
+		pool.Push(model.JobList{{UserID: 1, Type: model.JobMock, JobArg: &success}})
+		time.Sleep(jobDuration)
+		synctest.Wait()
+		if pool.IsCircuitBreakerOpened() {
+			t.Fatal("breaker did not close after a successful probe")
+		}
+	})
+}
 
 func TestCircuitBreakerRecovery(t *testing.T) {
 	b := &circuitBreaker{threshold: 2}

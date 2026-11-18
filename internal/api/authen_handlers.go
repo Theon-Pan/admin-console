@@ -109,6 +109,23 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		slog.String("Issuer", tokenClaimsForValidation.Issuer),
 		slog.String("ID", tokenClaimsForValidation.ID))
 
+	ip := request.ClientIP(r)
+	userAgent := r.UserAgent()
+	go func() {
+		loginInfoRequest := model.NewLoginInfoCreationRequest(user)
+		if ip != "" {
+			loginInfoRequest.IP = &ip
+		}
+		loginInfoRequest.Browser = &userAgent
+		var jobArg any = loginInfoRequest
+		job := model.Job{
+			UserID: user.UserID,
+			Type:   model.JobRecordLogin,
+			JobArg: &jobArg,
+		}
+		h.pool.Push(model.JobList{job})
+	}()
+
 	apiResult := response.NewSucceesResultWithMessage(locale.NewLocalizedError("api.success").Translate(request.GetLocale(r)))
 	apiResult.SetExtra("token", token)
 	response.JSON(w, r, apiResult)
