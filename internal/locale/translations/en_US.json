@@ -8,5 +8,6 @@
     "error.api.incorrect_username_or_password": "Incorrect username or password",
     "error.api.internal_error": "Internal error",
     "error.api.unauthorized": "Unauthorized request",
-    "api.success": "Success"
+    "api.login.success": "Login success",
+    "api.logout.success": "Logout success"
 }

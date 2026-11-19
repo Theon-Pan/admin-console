@@ -22,28 +22,23 @@ func NewHandler(store *storage.Storage, pool *worker.Pool) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/captchaImage", handler.captchaImg)
 	mux.HandleFunc("POST /api/login", handler.Login)
+	mux.HandleFunc("GET /api/logout", handler.Logout)
 
 	return middleware.withCORSHeaders(middleware.validateJWTokenAuth(mux))
 }
 
 // EnqueueJob put a request to the pool to do the job according to the type of the request.
 func (h *handler) EnqueueJob(jobRequest any) {
+	if jobRequest == nil {
+		slog.Warn("Cannot enqueue job: nil request")
+		return
+	}
 	var job model.Job
 	switch request := jobRequest.(type) {
 	case *model.LoginInfoCreationRequest:
-		if request == nil {
-			slog.Warn("Cannot enqueue login info job: nil request")
-			return
-		}
-
 		job.Type = model.JobTypeRecordLogin
 		job.UserID = request.UserID
 	case *model.MockJobRequest:
-		if request == nil {
-			slog.Warn("Cannot enqueue mock job: nil request")
-			return
-		}
-
 		job.Type = model.JobTypeMock
 	default:
 		slog.Warn("Cannot enqueue job: unsupported request type",

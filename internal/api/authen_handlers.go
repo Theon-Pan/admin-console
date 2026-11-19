@@ -137,7 +137,7 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		slog.String("Issuer", tokenClaimsForValidation.Issuer),
 		slog.String("ID", tokenClaimsForValidation.ID))
 
-	successMessage := locale.NewLocalizedError("api.success").Translate(request.GetLocale(r))
+	successMessage := locale.NewLocalizedError("api.login.success").Translate(request.GetLocale(r))
 	// Recording login information asynchronously.
 	login_at := time.Now().UTC()
 	loginInfoRequest.Status = model.LoginSuccess
@@ -147,5 +147,47 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	apiResult := response.NewSucceesResultWithMessage(successMessage)
 	apiResult.SetExtra("token", token)
+	response.JSON(w, r, apiResult)
+}
+
+func (h *handler) Logout(w http.ResponseWriter, r *http.Request) {
+	if request.IsAuthenticated(r) == false {
+		slog.Warn("Cannot logout due to not authenticated yet")
+		return
+	}
+	loginUser, err := request.GetLoginUser(r)
+	if err != nil {
+		slog.Warn("Cannot find the login user")
+		return
+	}
+
+	ip := request.ClientIP(r)
+	userAgent := r.UserAgent()
+
+	loginInfoRequest := &model.LoginInfoCreationRequest{
+		Username: loginUser.Username,
+	}
+	if ip != "" {
+		loginInfoRequest.IP = &ip
+	}
+	loginInfoRequest.Browser = &userAgent
+
+	// Remove the login user
+	if err = h.store.RemoveLoginUser(r.Context(), *loginUser); err != nil {
+		errorMessage := locale.NewLocalizedError("error.api.internal_server_error").Translate(request.GetLocale(r))
+		apiResult := response.NewErrorResultWithMessage(errorMessage)
+		apiResult.SetError(&err)
+		response.JSON(w, r, apiResult)
+	}
+
+	// Recording logout infor asynchronously.
+	at := time.Now().UTC()
+	successMessage := locale.NewLocalizedError("api.logout.success").Translate(request.GetLocale(r))
+	loginInfoRequest.LoginAt = &at
+	loginInfoRequest.Message = &successMessage
+	loginInfoRequest.Status = model.LoginSuccess
+	go h.EnqueueJob(loginInfoRequest)
+
+	apiResult := response.NewErrorResultWithMessage(successMessage)
 	response.JSON(w, r, apiResult)
 }

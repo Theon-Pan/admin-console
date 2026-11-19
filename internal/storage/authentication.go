@@ -24,25 +24,29 @@ func (s *Storage) VerifyCaptchaCode(context context.Context, id, actualCode stri
 	return true, nil
 }
 
-func (s *Storage) StoreLoginUser(context context.Context, loginUser model.LoginUser) error {
+func (s *Storage) StoreLoginUser(ctx context.Context, loginUser model.LoginUser) error {
 	data, err := json.Marshal(loginUser)
 	if err != nil {
 		return err
 	}
 
-	return s.redisClient.Set(context, "login_tokens:"+loginUser.LoginUUID, data, 30*time.Minute).Err()
+	return s.redisClient.Set(ctx, "login_tokens:"+loginUser.LoginUUID, data, 30*time.Minute).Err()
 }
 
-func (s *Storage) RetrieveLoginUser(context context.Context, id string) (*model.LoginUser, error) {
-	return s.getLoginUser(context, id)
+func (s *Storage) RemoveLoginUser(ctx context.Context, loginUser model.LoginUser) error {
+	return s.redisClient.Del(ctx, "login_tokens:"+loginUser.LoginUUID).Err()
 }
 
-func (s *Storage) getCaptchaCode(context context.Context, id string) (string, error) {
-	return s.redisClient.Get(context, "captcha_codes:"+id).Result()
+func (s *Storage) RetrieveLoginUser(ctx context.Context, id string) (*model.LoginUser, error) {
+	return s.getLoginUser(ctx, id)
 }
 
-func (s *Storage) getLoginUser(context context.Context, id string) (*model.LoginUser, error) {
-	data, err := s.redisClient.Get(context, "login_tokens:"+id).Result()
+func (s *Storage) getCaptchaCode(ctx context.Context, id string) (string, error) {
+	return s.redisClient.Get(ctx, "captcha_codes:"+id).Result()
+}
+
+func (s *Storage) getLoginUser(ctx context.Context, id string) (*model.LoginUser, error) {
+	data, err := s.redisClient.Get(ctx, "login_tokens:"+id).Result()
 	if err != nil {
 		return nil, err
 	}

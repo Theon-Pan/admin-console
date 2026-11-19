@@ -13,6 +13,7 @@ type LoginRequest struct {
 // LoginUser represents the user's detail who has logged in.
 type LoginUser struct {
 	UserID      int64      `json:"user_id"`
+	Username    string     `json:"username"`
 	LoginUUID   string     `json:"login_uuid"`
 	LastLoginAt *time.Time `json:"last_login_at"`
 	ExpiredAt   *time.Time `json:"expired_at"`
@@ -28,6 +29,7 @@ func NewLoginUser(user *User, loginUUID string) *LoginUser {
 	expired_at := lastLoginAt.Add(30 * time.Minute).UTC()
 	return &LoginUser{
 		UserID:      user.UserID,
+		Username:    user.Username,
 		LoginUUID:   loginUUID,
 		LastLoginAt: &lastLoginAt,
 		ExpiredAt:   &expired_at,

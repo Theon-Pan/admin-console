@@ -1,7 +1,7 @@
 package api // import "admin-console/internal/api"
 import (
+	"admin-console/internal/http/request"
 	"admin-console/internal/http/response"
-	"admin-console/internal/model"
 	"admin-console/internal/storage"
 	"admin-console/internal/utils"
 	"context"
@@ -11,8 +11,6 @@ import (
 )
 
 type contextKey string
-
-const loginUserContextKey contextKey = "loginUser"
 
 const bearerPrefix = "Bearer "
 
@@ -72,15 +70,12 @@ func (m *middleware) validateJWTokenAuth(next http.Handler) http.Handler {
 		slog.Info("Authentication passed",
 			slog.String("url", r.RequestURI))
 
-		ctx := context.WithValue(r.Context(), loginUserContextKey, loginUser)
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, request.LoginUserContextKey, loginUser)
+		ctx = context.WithValue(ctx, request.IsAuthenticatedContextKey, true)
+
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
-}
-
-// LoginUserFromContext returns the authenticated login user set by the auth middleware.
-func LoginUserFromContext(ctx context.Context) *model.LoginUser {
-	loginUser, _ := ctx.Value(loginUserContextKey).(*model.LoginUser)
-	return loginUser
 }
 
 func isAnonymousPath(path string) bool {
